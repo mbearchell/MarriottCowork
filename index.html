@@ -45,6 +45,16 @@ h3{font-size:16px;margin:0 0 6px}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
 .btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn.big{padding:11px 22px;font-size:16px}
+.btn:disabled,.btn[disabled]{background:var(--chip) !important;border-color:var(--line) !important;color:var(--muted) !important;cursor:not-allowed;opacity:.75}
+.nav-hint{font-size:13.5px;color:var(--bad);font-weight:600}
+.nav-hint:empty{display:none}
+.score-progress{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:2px solid var(--brand);background:var(--chip);border-radius:10px;padding:10px 14px;margin:10px 0}
+.score-progress .big{font-size:20px;font-weight:700;color:var(--brand)}
+.score-progress.done{border-color:var(--accent);background:var(--accent-soft)}
+.score-progress.done .big{color:var(--accent)}
+.next-idea{display:block;width:100%;text-align:center;font-size:17px;padding:14px 18px;margin:4px 0 12px}
+.tab.done .t::before{content:"\2713  ";color:var(--accent)}
+.tab.todo .t{color:var(--bad)}
 .btn.small{padding:4px 10px;font-size:13px;font-weight:600}
 .btn.link{border:0;background:none;color:var(--brand);padding:2px 4px;text-decoration:underline}
 .btn.copied{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -55,8 +65,22 @@ h3{font-size:16px;margin:0 0 6px}
 .chip.no[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
 .chip.partly[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#fff}
 label.f{display:block;font-weight:600;margin:12px 0 4px}
+.req{color:var(--bad);font-weight:700;margin-inline-start:2px}
+.err{display:block;color:var(--bad);font-size:13.5px;margin-top:4px;min-height:0}
+.err:empty{display:none}
+input[aria-invalid=true]{border-color:var(--bad);background:var(--bad-soft)}
+.evid-list{margin:6px 0 0;padding-inline-start:22px}
+.evid-list li{margin:3px 0}
+.other-in{flex:1;min-width:220px}
 .hint{display:block;font-weight:400;color:var(--muted);font-size:13.5px}
-input[type=text],input[type=number],input[type=date],textarea{width:100%;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 11px}
+.info{position:relative;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-inline-start:6px;vertical-align:-3px;border:1.5px solid var(--brand);border-radius:50%;background:var(--card);color:var(--brand);font:italic 700 13px/1 Georgia,"Times New Roman",serif;cursor:help;padding:0}
+.info:hover,.info:focus-visible{background:var(--brand);color:var(--brand-ink)}
+.info .tip{display:none;position:absolute;z-index:20;inset-block-start:calc(100% + 8px);inset-inline-start:-10px;width:max-content;max-width:min(360px,80vw);background:var(--ink);color:var(--card);font:400 14px/1.45 "Segoe UI",system-ui,Arial,sans-serif;font-style:normal;text-align:start;white-space:pre-line;padding:10px 12px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.info .tip::before{content:"";position:absolute;inset-block-start:-6px;inset-inline-start:14px;border:6px solid transparent;border-block-start:0;border-block-end-color:var(--ink)}
+.info .tip b{display:block;margin-bottom:2px;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;opacity:.8}
+.info:hover .tip,.info:focus .tip,.info:focus-within .tip{display:block}
+@media print{.info{display:none}}
+input[type=text],input[type=email],input[type=number],input[type=date],textarea{width:100%;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 11px}
 textarea{min-height:76px;resize:vertical}
 input[type=number]{max-width:140px}
 input[type=date]{max-width:220px}
@@ -132,6 +156,7 @@ table.ex th{background:var(--chip)}
  <div class="nav-inner">
   <button type="button" class="btn big" id="back" data-act="back">← Back</button>
   <span class="spacer"></span>
+  <span class="nav-hint" id="navHint" role="status"></span>
   <span class="muted" id="pos"></span>
   <button type="button" class="btn big primary" id="next" data-act="next">Continue →</button>
  </div>
@@ -166,9 +191,8 @@ var CRIT=[
 ];
 var STOPS=["Send","Decide","Approve","Share"];
 var EVIDENCE=["Total time including review","Reviewer rating (1 to 5)","Number of corrections","What worked and what didn't","Would I use it again?"];
-var PROMPT1="Look at my calendar, sent email, Teams chats and files I've worked on over the last four weeks. List the recurring deliverables or tasks I produce, such as status updates, meeting prep, reports, trackers or follow-ups. For each one, show how often it seems to happen, which sources it draws on, and who receives it. Put the top 8 in a table.";
-var PROMPT2="For each item, answer yes or no to four questions: (1) Does it end in a clear finished output, such as a document, deck, tracker or email? (2) Does it take several steps or pull from three or more emails, chats, meetings or files? (3) Could I hand it off and review the result, rather than staying involved at every step? (4) Would it take someone more than an hour to do by hand? Show the results as a table and rank the items with the most \"yes\" answers first.";
-var PROMPT3="For the top two to four items, give me a short bulleted summary of each: what triggers it, which sources it uses, the main steps, the finished output, who should review it, and what should stay with me (such as sending, approving or sharing).";
+var PROMPT1="Look at my calendar, sent emails, Teams chats, and files I've worked on over the last four weeks.\nIdentify recurring deliverables or multi-step workflows I perform or contribute to, such as status updates, meeting preparation, reports, trackers, research, planning, or follow-ups.\nAlso consider occasional but more complex work that requires gathering information, coordinating activities, or producing a finished deliverable.\nFor each workflow, show:\n\n- What the work involves\n- How often it appears to happen\n- Which sources or applications it draws on\n- Who receives or uses the output\n- What the finished deliverable looks like\n\nPrioritize workflows supported by evidence from my actual activity rather than making assumptions based on my role.\nPresent the top 8 opportunities in a table. Do not evaluate whether they are a good fit for Cowork yet.";
+var PROMPT2="For each item, answer yes or no to four questions: (1) Does it end in a clear finished output, such as a document, deck, tracker or email? (2) Does it take several steps or pull from three or more emails, chats, meetings or files? (3) Could I hand it off and review the result, rather than staying involved at every step? (4) Would it take someone more than an hour to do by hand? Show the results as a table and rank the items with the most \"yes\" answers first. Then for the top 6 can you list each item as a verb plus an outcome in bulleted format?";
 var TIMELINE=[
  ["Wed, Nov 11","Cowork access begins",""],
  ["Wed, Nov 11","Foundations training, option 1 (pick one). Bring your shortlist and #1 plan.","10:30-11:30 a.m."],
@@ -187,7 +211,7 @@ var TIMELINE=[
  ["Thu, Dec 3","Microsoft Office Hours (optional drop-in)","10:00-10:30 a.m."]
 ];
 
-function blank(){return {v:1,step:0,visited:{0:true},name:"",team:"",session:"",ideas:[],ranks:{r1:"",r2:"",r3:""},ui:{scoreId:""},
+function blank(){return {v:1,step:0,visited:{0:true},name:"",last:"",email:"",team:"",ideas:[],ranks:{r1:"",r2:"",r3:""},ui:{scoreId:"",showErr:false},
  define:{trigger:"",inputs:"",steps:"",output:"",reviewer:"",stops:[],stopOther:""},
  value:{hours:"",people:"",eff:"",qual:"",exp:"",effBase:"",qualBase:"",expBase:"",effM:"Time log for the run, including review and fix-up time",qualM:"Reviewer rating (1 to 5) and number of corrections",expM:"Would I use it again? What worked and what didn't"},
  plan:{deliverable:"",due:"",run1:"",run2:"",evidence:EVIDENCE.slice(),help:""}};}
@@ -205,7 +229,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S));storageOK=true;}
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function uid(){return "i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function idea(id){for(var i=0;i<S.ideas.length;i++){if(S.ideas[i].id===id)return S.ideas[i];}return null;}
-function newIdea(name){return {id:uid(),name:name,freq:"",time:"",fit:{inputs:"",part:"",inst:""},outside:"",scores:{},touched:{}};}
+function newIdea(name){return {id:uid(),name:name,freq:"",time:"",freqOther:"",timeOther:"",fit:{inputs:"",part:"",inst:""},outside:"",scores:{},touched:{}};}
 function fitResult(it){var f=it.fit;
  if(f.inputs==="No"||(f.inputs==="Partly"&&f.part==="No")||f.inst==="No")return "fr";
  if(!f.inputs||!f.inst||(f.inputs==="Partly"&&!f.part))return "pending";
@@ -214,6 +238,8 @@ function passed(){return S.ideas.filter(function(it){return fitResult(it)==="pas
 function scoreCount(it){var n=0;CRIT.forEach(function(c){if(it.scores[c.k])n++;});return n;}
 function total(it){var t=0;CRIT.forEach(function(c){t+=(it.scores[c.k]||0);});return t;}
 function complete(it){return scoreCount(it)===CRIT.length;}
+function unscored(){return passed().filter(function(it){return !complete(it);});}
+function scoringBlocked(){return passed().length>0&&unscored().length>0;}
 function keyText(t){if(t>=17)return "Strong first test";if(t>=12)return "Good test or a solid #2 or #3";return "Probably better in Copilot Chat, or save for later";}
 function rankable(){return passed().filter(function(it){return it.scores.feas!==1;});}
 function futureReqs(){return S.ideas.filter(function(it){return fitResult(it)==="fr"||(fitResult(it)==="pass"&&it.scores.feas===1);});}
@@ -251,10 +277,12 @@ function valueSentenceHTML(){return valueSentenceParts().map(function(p){if(p[1]
 function valueSentenceText(){return valueSentenceParts().map(function(p){return p[0]||p[1];}).join("");}
 
 /* ---------- UI helpers ---------- */
+function otherNote(it,k){var o=k==="freq"&&it.freq==="Other"?it.freqOther:k==="effort"&&it.time==="Other"?it.timeOther:null;if(o===null)return "";return '<div class="from">You chose Other in Part A'+(String(o).trim()?': \u201c'+esc(String(o).trim())+'\u201d':"")+'. Pick the closest level.</div>';}
 function chip(label,on,attrs,cls){return '<button type="button" class="chip '+(cls||"")+'" aria-pressed="'+(on?"true":"false")+'" '+attrs+">"+esc(label)+"</button>";}
 function copyBtn(key,label){return '<button type="button" class="btn small" data-act="copy" data-copy="'+key+'">'+esc(label||"Copy prompt")+"</button>";}
-function field(path,label,hint,ph,multi){var val=get(path);
- return '<label class="f" for="'+path+'">'+esc(label)+(hint?'<span class="hint">'+esc(hint)+"</span>":"")+"</label>"+
+function infoTip(text){var t=String(text||"").replace(/^e\.g\.\s*/i,"");return '<button type="button" class="info" aria-label="Show example: '+esc(t.replace(/\n/g,"; "))+'">i<span class="tip" role="tooltip"><b>Example</b>'+esc(t)+"</span></button>";}
+function field(path,label,hint,ph,multi,info){var val=get(path);
+ return '<label class="f" for="'+path+'">'+esc(label)+(info?infoTip(ph):"")+(hint?'<span class="hint">'+esc(hint)+"</span>":"")+"</label>"+
  (multi?'<textarea id="'+path+'" data-bind="'+path+'" placeholder="'+esc(ph||"")+'">'+esc(val)+"</textarea>":
  '<input type="text" id="'+path+'" data-bind="'+path+'" value="'+esc(val)+'" placeholder="'+esc(ph||"")+'">');}
 function get(path){var p=path.split(".");var o=S;for(var i=0;i<p.length;i++){if(o==null)return "";o=o[p[i]];}return o==null?"":o;}
@@ -262,27 +290,41 @@ function set(path,v){var p=path.split(".");var o=S;for(var i=0;i<p.length-1;i++)
 function header(kicker,title,why,mins,lead){return '<div class="kicker">'+esc(kicker)+'</div><h1>'+esc(title)+(mins?'<span class="timer">'+esc(mins)+"</span>":"")+"</h1>"+(why?'<p class="why">'+esc(why)+"</p>":"")+(lead?'<p class="lead">'+lead+"</p>":"");}
 function needR1(){return '<div class="callout warn">Choose your #1 on the <button type="button" class="btn link" data-act="go" data-step="4">Shortlist</button> step first. Everything here fills in from it.</div>';}
 
+/* ---------- Profile (required) ---------- */
+var PROFILE=[["name","First name","given-name","text"],["last","Last name","family-name","text"],["email","Work email","email","email"],["team","Department","organization-title","text"]];
+function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||"").trim());}
+function profileErr(k){var v=String(S[k]||"").trim();if(!v){var f=PROFILE.filter(function(x){return x[0]===k;})[0];return "Enter your "+f[1].toLowerCase()+".";}if(k==="email"&&!validEmail(v))return "Enter a valid email address, for example name@company.com.";return "";}
+function profileOK(){return PROFILE.every(function(f){return !profileErr(f[0]);});}
+function fullName(){return [S.name,S.last].map(function(x){return String(x||"").trim();}).filter(Boolean).join(" ");}
+function whoLine(){return [fullName(),String(S.team||"").trim(),String(S.email||"").trim()].filter(Boolean).join(" \u00b7 ");}
+function pField(f){var k=f[0],e=S.ui.showErr?profileErr(k):"";
+ return '<label class="f" for="p-'+k+'">'+esc(f[1])+'<span class="req" aria-hidden="true">*</span></label>'+
+ '<input type="'+f[3]+'" id="p-'+k+'" data-bind="'+k+'" value="'+esc(S[k])+'" autocomplete="'+f[2]+'" required aria-required="true"'+(e?' aria-invalid="true"':"")+' aria-describedby="e-'+k+'">'+
+ '<span class="err" id="e-'+k+'" data-err="'+k+'">'+esc(e)+"</span>";}
+function updateErrs(){if(S.step!==0||!S.ui.showErr)return;PROFILE.forEach(function(f){var k=f[0],e=profileErr(k);var sp=document.getElementById("e-"+k);if(sp)sp.textContent=e;var inp=document.getElementById("p-"+k);if(inp){if(e)inp.setAttribute("aria-invalid","true");else inp.removeAttribute("aria-invalid");}});
+ var sum=document.getElementById("p-sum");if(sum)sum.textContent=profileOK()?"":"Complete the required fields to continue.";}
+
 /* ---------- Screens ---------- */
 function vStart(){return header("Find Your First Cowork Win","Your workshop companion","","",
  "This companion walks you through Parts A to F of the workshop, one step at a time. You find the work, check what you can test, rank a shortlist of at least three workflows, and plan the first run of your #1. Anything you enter carries forward, so you never type it twice.")+
- '<div class="callout warn"><b>Before you start:</b> Don\'t enter confidential Marriott information, guest information, employee personal information, legal or financial details, credentials, or the contents of sensitive emails, chats, meetings or files. Describe your workflows at the process level, for example "Compile the weekly team status brief."<br><span class="muted">Your answers stay in this browser on this device. Nothing is sent to Microsoft, Marriott or anyone else.</span></div>'+
+ '<div class="callout warn"><b>Before you start:</b> Don\'t enter confidential Marriott information, guest information, legal or financial details, credentials, or the contents of sensitive emails, chats, meetings or files. Describe your workflows at the process level, for example "Compile the weekly team status brief."<br><span class="muted">Your answers stay in this browser on this device. Nothing is sent to Microsoft, Marriott or anyone else.</span></div>'+
  '<div class="card"><h3>Two ground rules for the pilot</h3><p style="margin:0">First, use Microsoft 365 information only: Outlook, Teams, meetings, OneDrive and SharePoint. No external connectors, plugins or outside systems. Second, you stay accountable for the result. Cowork drafts; you review, decide, send and share.</p></div>'+
- '<div class="card"><h3>About you <span class="muted" style="font-weight:400">(optional, stays on this device)</span></h3><div class="grid2"><div>'+field("name","First name","","")+'</div><div>'+field("team","Team","","")+'</div></div>'+
- '<label class="f">Session</label><div class="chips">'+chip("Monday, November 9",S.session==="Nov 9",'data-act="setv" data-path="session" data-val="Nov 9"')+chip("Tuesday, November 10",S.session==="Nov 10",'data-act="setv" data-path="session" data-val="Nov 10"')+"</div></div>"+
+ '<div class="card"><h3>About you</h3><p class="muted" style="margin:0;font-size:14px">All fields are required.</p><div class="grid2"><div>'+pField(PROFILE[0])+'</div><div>'+pField(PROFILE[1])+'</div><div>'+pField(PROFILE[2])+'</div><div>'+pField(PROFILE[3])+'</div></div>'+
+ '<span class="err" id="p-sum" role="alert">'+(S.ui.showErr&&!profileOK()?"Complete the required fields to continue.":"")+'</span></div>'+
  '<details class="card"><summary>Refresher: Chat or Cowork? The four-question test</summary><p>Before you plan anything, check whether a task suits Cowork or is better handled in Copilot Chat.</p><ol><li>Can I describe the finished outcome clearly? If not, start in Chat to sharpen it first.</li><li>Does it need several steps, sources, apps or formats?</li><li>Would I rather hand it off and review it later?</li><li>Would a colleague spend meaningful time doing it manually?</li></ol><p>Mostly yes? The task is a good fit for Cowork. Mostly no? Copilot Chat is probably the faster route.</p><p><b>Not for Cowork:</b> approving spend, policy or legal positions; sending external messages without your review; working with data you should not access; vague asks such as "fix my week".</p></details>'+
  '<details class="card"><summary>The six-step method</summary><table class="ex"><tr><th>Step</th><th>What you do</th></tr><tr><td>1. Find the work</td><td>List repeated work that pulls from several sources (aim for 4 to 8 ideas)</td></tr><tr><td>2. Test the fit</td><td>Quickly check that each idea can be tested with Microsoft 365 information during the pilot</td></tr><tr><td>3. Prioritize</td><td>Score the ideas that pass and rank your top three as #1, #2 and #3</td></tr><tr><td>4. Define the job (#1)</td><td>Define the trigger, inputs, steps, output, reviewer and stopping point for your #1</td></tr><tr><td>5. Value hypothesis (#1)</td><td>State the value you expect from your #1 and how you will measure it</td></tr><tr><td>6. Plan the first run (#1)</td><td>Plan the first real run of your #1</td></tr></table><p class="muted">During the pilot, repeat Steps 4 to 6 for #2 and #3, and run any new idea through Steps 2 and 3 to see where it lands on your shortlist.</p></details>';}
 
 function vFind(){var h=header("Part A \u00b7 Step 1","Find the work","","About 10 minutes","Copy each prompt into Microsoft 365 Copilot Chat exactly as written and run it (about 3 minutes). Then keep the ideas that ring true below. Copilot's list is a starting point; you decide what's real.");
  h+='<div class="card"><div class="prompt-head"><h3>Prompt 1</h3>'+copyBtn("p1")+'</div><div class="prompt">'+esc(PROMPT1)+'</div>'+
  '<div class="prompt-head"><h3>Prompt 2</h3>'+copyBtn("p2")+'</div><div class="prompt">'+esc(PROMPT2)+'</div><p class="muted" style="margin:4px 0 0;font-size:14px">These are the four questions from the polls. Question 3 is your call; Copilot can only estimate it.</p>'+
- '<details><summary>Optional Prompt 3 (head start on Part D)</summary><div class="prompt-head"><span></span>'+copyBtn("p3")+'</div><div class="prompt">'+esc(PROMPT3)+'</div><p class="muted" style="font-size:14px">Use this when you define your #1 in Part D, and later your #2 and #3. Confirm the stopping point yourself.</p></details></div>';
+ '</div>';
  h+='<div class="card"><h3>My workflow ideas <span class="muted" style="font-weight:400">('+S.ideas.length+" so far \u00b7 aim for 4 to 8)</span></h3>"+
- '<p class="muted" style="margin:0 0 8px;font-size:14px">Write each idea as a verb plus an outcome, for example "Compile the weekly team status brief." Then tap how often it happens and roughly how long it takes.</p>'+
- '<div class="row"><input type="text" id="newIdea" placeholder="Verb + outcome, e.g. Compile the weekly team status brief" aria-label="New workflow idea"><button type="button" class="btn primary" data-act="addIdea">Add idea</button></div>'+
- '<details><summary>Paste several at once</summary><textarea id="bulkIdeas" placeholder="One idea per line. Bullets and numbers are removed automatically."></textarea><div style="margin-top:6px"><button type="button" class="btn" data-act="addBulk">Add these ideas</button></div></details></div>';
+ '<p class="muted" style="margin:0 0 8px;font-size:14px">Paste the bulleted list from Prompt 2, or type your own, one idea per line. Write each idea as a verb plus an outcome, for example "Compile the weekly team status brief." Then tap how often it happens and roughly how long it takes. For time, estimate one occurrence from start to finish, including gathering, drafting and review.</p>'+
+ '<label class="f" for="bulkIdeas" style="margin-top:0">Paste your workflow ideas</label><textarea id="bulkIdeas" rows="6" style="min-height:140px" placeholder="One idea per line. Bullets and numbers are removed automatically.&#10;e.g.&#10;- Compile the weekly team status brief&#10;- Prepare the monthly leadership review pack"></textarea>'+
+ '<div style="margin-top:8px"><button type="button" class="btn primary" data-act="addBulk">Add these ideas</button></div></div>';
  S.ideas.forEach(function(it,i){h+='<div class="card idea-card"><div class="num">'+(i+1)+'</div><div><input type="text" data-idea="'+it.id+'" data-key="name" value="'+esc(it.name)+'" aria-label="Workflow idea '+(i+1)+'">'+
-  '<div class="row" style="margin-top:8px"><span class="muted" style="font-size:13px;min-width:92px">How often?</span><div class="chips">'+FREQ.map(function(f){return chip(f,it.freq===f,'data-act="ideaSet" data-id="'+it.id+'" data-key="freq" data-val="'+esc(f)+'"');}).join("")+'</div></div>'+
-  '<div class="row" style="margin-top:6px"><span class="muted" style="font-size:13px;min-width:92px">Rough time</span><div class="chips">'+TIME.map(function(f){return chip(f,it.time===f,'data-act="ideaSet" data-id="'+it.id+'" data-key="time" data-val="'+esc(f)+'"');}).join("")+'</div></div></div>'+
+  '<div class="row" style="margin-top:8px"><span class="muted" style="font-size:13px;min-width:92px">How often?</span><div class="chips">'+FREQ.map(function(f){return chip(f,it.freq===f,'data-act="ideaSet" data-id="'+it.id+'" data-key="freq" data-val="'+esc(f)+'"');}).join("")+chip("Other",it.freq==="Other",'data-act="ideaSet" data-id="'+it.id+'" data-key="freq" data-val="Other"')+'</div></div>'+(it.freq==="Other"?'<div class="row" style="margin-top:6px"><span style="min-width:92px"></span><input type="text" class="other-in" data-idea="'+it.id+'" data-key="freqOther" value="'+esc(it.freqOther||"")+'" placeholder="Describe how often, e.g. twice a year, or only during events" aria-label="How often, other"></div>':"")+
+  '<div class="row" style="margin-top:6px"><span class="muted" style="font-size:13px;min-width:92px">Rough time</span><div class="chips">'+TIME.map(function(f){return chip(f,it.time===f,'data-act="ideaSet" data-id="'+it.id+'" data-key="time" data-val="'+esc(f)+'"');}).join("")+chip("Other",it.time==="Other",'data-act="ideaSet" data-id="'+it.id+'" data-key="time" data-val="Other"')+'</div></div>'+(it.time==="Other"?'<div class="row" style="margin-top:6px"><span style="min-width:92px"></span><input type="text" class="other-in" data-idea="'+it.id+'" data-key="timeOther" value="'+esc(it.timeOther||"")+'" placeholder="Describe the time, e.g. half a day plus follow-up" aria-label="Rough time, other"></div>':"")+'</div>'+
   '<div class="rm"><button type="button" class="btn small" data-act="rmIdea" data-id="'+it.id+'" aria-label="Remove idea">Remove</button></div></div>';});
  if(!S.ideas.length)h+='<p class="empty-note">No ideas yet. Add the ones from Copilot\'s list that ring true.</p>';
  h+='<details class="card"><summary>No useful results? Use these questions instead.</summary><ul><li>What do I produce weekly or monthly from several emails, chats, meetings or files?</li><li>What takes me more than an hour and feels like assembly rather than thinking?</li><li>Where do I copy and paste between Outlook, Teams, Excel, Word and PowerPoint?</li><li>What do I prepare before, or follow up after, recurring meetings?</li><li>What do I chase other people for, then consolidate and reconcile?</li><li>What would I happily hand to a capable new colleague?</li></ul></details>';
@@ -309,16 +351,21 @@ function vScore(){var h=header("Part C \u00b7 Step 3","Score it","So you start w
  var P=passed();
  if(!P.length)return h+'<div class="callout warn">None of your ideas has passed the quick fit check yet. Finish <button type="button" class="btn link" data-act="go" data-step="2">Part B</button> first.</div>';
  if(!idea(S.ui.scoreId)||fitResult(idea(S.ui.scoreId))!=="pass")S.ui.scoreId=P[0].id;
- h+='<div class="tabs" role="tablist">'+P.map(function(it){var c=scoreCount(it);return '<button type="button" class="tab" role="tab" aria-selected="'+(it.id===S.ui.scoreId)+'" data-act="scoreTab" data-id="'+it.id+'"><div>'+esc(it.name||"(unnamed)")+'</div><div class="t">'+(c===CRIT.length?total(it)+" / 21":c+" of 7 scored")+"</div></button>";}).join("")+"</div>";
+ var U=unscored(),nDone=P.length-U.length;
+ h+=U.length?'<div class="score-progress" role="status"><span class="big">'+nDone+" of "+P.length+' ideas scored</span><span>Score <b>every</b> idea below before you continue. When you finish one, use the blue <b>Next idea</b> button under the scores, or tap an idea\'s tab.</span></div>'
+  :'<div class="score-progress done" role="status"><span class="big">\u2713 All '+P.length+" ideas scored</span><span>Nice work. Select <b>Continue</b> to rank your shortlist.</span></div>";
+ h+='<div class="tabs" role="tablist">'+P.map(function(it){var c=scoreCount(it);return '<button type="button" class="tab '+(c===CRIT.length?"done":"todo")+'" role="tab" aria-selected="'+(it.id===S.ui.scoreId)+'" data-act="scoreTab" data-id="'+it.id+'"><div>'+esc(it.name||"(unnamed)")+'</div><div class="t">'+(c===CRIT.length?total(it)+" / 21":c+" of 7 scored")+"</div></button>";}).join("")+"</div>";
  var it=idea(S.ui.scoreId);
  h+='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">'+esc(it.name)+'</h3><div><span class="total">'+total(it)+'</span><span class="muted"> / 21</span></div></div>'+
   '<p style="margin:2px 0 10px" class="muted">'+(complete(it)?"<b>"+esc(keyText(total(it)))+"</b>":"Tap a level for each criterion.")+(it.scores.feas===1?' <span class="result fr">Feasibility 1: goes to the future requirements list</span>':"")+"</p>";
  CRIT.forEach(function(c){var src=it.touched[c.k];
-  h+='<div class="crit"><div><b>'+esc(c.l)+"</b>"+(src==="a"?'<div class="from">Filled from Part A, change if needed</div>':src==="b"?'<div class="from">Suggested from Part B, change if needed</div>':"")+'</div><div class="lvl">'+
+  h+='<div class="crit"><div><b>'+esc(c.l)+"</b>"+(src==="a"?'<div class="from">Filled from Part A, change if needed</div>':src==="b"?'<div class="from">Suggested from Part B, change if needed</div>':"")+otherNote(it,c.k)+'</div><div class="lvl">'+
   c.d.map(function(d,j){return '<button type="button" aria-pressed="'+(it.scores[c.k]===j+1)+'" data-act="score" data-id="'+it.id+'" data-key="'+c.k+'" data-val="'+(j+1)+'"><b>'+(j+1)+"</b>"+esc(d)+"</button>";}).join("")+"</div></div>";});
  h+="</div>";
  var idx=P.indexOf(it);
- if(idx<P.length-1)h+='<div style="text-align:end"><button type="button" class="btn" data-act="scoreTab" data-id="'+P[idx+1].id+'">Next idea: '+esc(P[idx+1].name)+" \u2192</button></div>";
+ var nxt=null;for(var q=1;q<=P.length;q++){var cand=P[(idx+q)%P.length];if(cand!==it&&!complete(cand)){nxt=cand;break;}}
+ if(nxt)h+='<button type="button" class="btn big primary next-idea" data-act="scoreTab" data-id="'+nxt.id+'">Next idea ('+(P.indexOf(nxt)+1)+" of "+P.length+"): "+esc(nxt.name)+" \u2192</button>";
+ else if(!complete(it))h+='<p class="muted" style="text-align:center;margin:4px 0 12px">Last one. Finish all seven criteria above, then select <b>Continue</b>.</p>';
  h+='<details class="card"><summary>Score key</summary><p>17-21: strong first test. 12-16: good test or a solid #2 or #3. 11 or below: probably better in Copilot Chat, or save for later. Any workflow with Feasibility 1 goes to the future requirements list, whatever its score.</p></details>';
  h+='<details class="card"><summary>Example (example only, not a Marriott process)</summary><table class="ex"><tr><th>Workflow</th><th>Freq.</th><th>Effort</th><th>Complexity</th><th>Impact</th><th>Feasibility</th><th>Measurability</th><th>Reach</th><th>Total /21</th><th>Rank</th></tr>'+
  '<tr><td>Weekly team status brief</td><td>3</td><td>2</td><td>3</td><td>2</td><td>3</td><td>3</td><td>2</td><td>18</td><td>#1</td></tr><tr><td>Monthly leadership review prep pack</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td><td>2</td><td>2</td><td>17</td><td>#2</td></tr><tr><td>Event or project recap pack</td><td>2</td><td>2</td><td>2</td><td>2</td><td>3</td><td>2</td><td>1</td><td>14</td><td>#3</td></tr></table><p class="muted">The status brief scores 3 on Complexity, but it is weekly and familiar, so it stays #1.</p></details>';
@@ -349,31 +396,31 @@ function vRank(){var h=header("Part C \u00b7 Step 3","Rank your shortlist","",""
 function vDefine(){var h=header("Part D \u00b7 Step 4","Define the job","So Cowork knows exactly what job you're handing it.","About 7 minutes","Define the edges of your #1 workflow. A well-defined workflow is much easier for Cowork to draft and for you to review.");
  if(!r1())return h+needR1();
  h+='<div class="carry"><dt>My #1 workflow</dt><dd><b>'+esc(r1name())+"</b></dd></div>";
- h+='<div class="card">'+field("define.trigger","Trigger: what starts the work?","","e.g. Thursday noon before Friday's leadership update")+
- field("define.inputs","Approved inputs: which emails, chats, meetings, files or folders?","Name them generally. Don't paste their contents.","e.g. Team Teams channel, related email threads, SharePoint project tracker, recurring meeting recaps",true)+
- field("define.steps","Major steps (3 to 6)","One step per line.","Gather updates\nGroup by workstream\nFlag risks, slipped dates and decisions needed\nReconcile conflicting updates\nDraft brief and tracker",true)+
- field("define.output","Finished output: format, length, audience","","e.g. One-page Word brief + Excel action tracker in the team folder")+
- field("define.reviewer","Human reviewer","A role is enough, for example \"Team lead\".","e.g. Team lead checks status, dates and risks")+
- '<label class="f">Stopping point: what Cowork must not do<span class="hint">Tap all that apply.</span></label><div class="chips">'+STOPS.map(function(s){return chip(s,S.define.stops.indexOf(s)>-1,'data-act="stop" data-val="'+s+'"');}).join("")+"</div>"+
- field("define.stopOther","Anything else? (optional)","","e.g. Cowork drafts only; the lead shares it")+"</div>";
+ h+='<div class="card">'+field("define.trigger","Trigger: what starts the work?","","e.g. Thursday noon before Friday's leadership update",false,true)+
+ field("define.inputs","Approved inputs: which emails, chats, meetings, files or folders?","Name them generally. Don't paste their contents.","e.g. Team Teams channel, related email threads, SharePoint project tracker, recurring meeting recaps",true,true)+
+ field("define.steps","Major steps (3 to 6)","One step per line.","Gather updates\nGroup by workstream\nFlag risks, slipped dates and decisions needed\nReconcile conflicting updates\nDraft brief and tracker",true,true)+
+ field("define.output","Finished output: format, length, audience","","e.g. One-page Word brief + Excel action tracker in the team folder",false,true)+
+ field("define.reviewer","Human reviewer","A role is enough, for example \"Team lead\".","e.g. Team lead checks status, dates and risks",false,true)+
+ '<label class="f">Stopping point: what Cowork must not do'+infoTip("Send and Share (Cowork drafts only; the lead shares it)")+'<span class="hint">Tap all that apply.</span></label><div class="chips">'+STOPS.map(function(s){return chip(s,S.define.stops.indexOf(s)>-1,'data-act="stop" data-val="'+s+'"');}).join("")+"</div>"+
+ field("define.stopOther","Anything else? (optional)","","e.g. Cowork drafts only; the lead shares it",false,true)+"</div>";
  h+='<details class="card"><summary>Example (example only, not a Marriott process)</summary><p><b>Weekly team status brief and action tracker</b></p><table class="ex"><tr><th>Boundary</th><th>Example</th></tr><tr><td>Trigger</td><td>Thursday noon before Friday\'s leadership update</td></tr><tr><td>Inputs</td><td>Team Teams channel, related email threads, SharePoint project tracker, recurring meeting recaps</td></tr><tr><td>Steps</td><td>Gather updates, group by workstream, flag risks, slipped dates and decisions needed, reconcile conflicting updates, draft brief and tracker</td></tr><tr><td>Output</td><td>One-page Word brief + Excel action tracker in the team folder</td></tr><tr><td>Reviewer</td><td>Team lead checks status, dates and risks</td></tr><tr><td>Stopping point</td><td>Cowork drafts only; the lead shares it</td></tr></table></details>';
- h+='<details class="card"><summary>Head start: Optional Prompt 3</summary><div class="prompt-head"><span class="muted">Run in Copilot Chat, then use the summary to fill the fields above.</span>'+copyBtn("p3")+'</div><div class="prompt">'+esc(PROMPT3)+'</div></details>';
+ 
  h+='<p class="muted">When your access opens, you\'ll use these answers to write the prompt for your first Cowork run. Your brief at the end builds a starting draft from them.</p>';
  return h;}
 
 function vValue(){var h=header("Part E \u00b7 Step 5","Value hypothesis (#1)","","Parts E and F: about 13 minutes","In the session, write one line plus the baseline (how long it takes today and how many people are involved); you can finish the rest after the session. It becomes the baseline you will test against.");
  if(!r1())return h+needR1();
  h+='<div class="carry"><dt>My #1 workflow</dt><dd><b>'+esc(r1name())+"</b></dd></div>";
- h+='<div class="card"><div class="grid2"><div><label class="f" for="value.hours">Baseline: hours it takes today<span class="hint">Your estimate for one cycle.</span></label><input type="number" min="0" step="0.25" id="value.hours" data-bind="value.hours" value="'+esc(S.value.hours)+'" placeholder="e.g. 2.5"></div>'+
- '<div><label class="f" for="value.people">People involved today<span class="hint">Including handoffs and people you chase.</span></label><input type="number" min="0" step="1" id="value.people" data-bind="value.people" value="'+esc(S.value.people)+'" placeholder="e.g. 4"></div></div>'+
+ h+='<div class="card"><div class="grid2"><div><label class="f" for="value.hours">Baseline: hours it takes today'+infoTip("2.5 hours")+'<span class="hint">Your estimate for one cycle.</span></label><input type="number" min="0" step="0.25" id="value.hours" data-bind="value.hours" value="'+esc(S.value.hours)+'" placeholder="e.g. 2.5"></div>'+
+ '<div><label class="f" for="value.people">People involved today'+infoTip("4 people")+'<span class="hint">Including handoffs and people you chase.</span></label><input type="number" min="0" step="1" id="value.people" data-bind="value.people" value="'+esc(S.value.people)+'" placeholder="e.g. 4"></div></div>'+
  '<h3 style="margin-top:16px">Your hypothesis</h3><div class="sentence" data-live="sentence">'+valueSentenceHTML()+'</div><p class="muted" style="font-size:13px;margin:4px 0 0">Filled in from Part D and your baseline. Orange words are still missing; <button type="button" class="btn link" data-act="go" data-step="5">edit Part D</button>.</p>'+
- field("value.eff","Efficiency","","e.g. Under 1 hour, including review")+
- field("value.qual","Quality","","e.g. Catch more open action items")+
- field("value.exp","Experience","","e.g. Thursday afternoon goes to follow-up conversations instead of formatting")+
+ field("value.eff","Efficiency","How long one cycle should take with Cowork, including your review.","e.g. Under 1 hour, including review",false,true)+
+ field("value.qual","Quality","What will be better about the finished output.","e.g. Catch more open action items",false,true)+
+ field("value.exp","Experience","What changes for you or the people who receive it.","e.g. Thursday afternoon goes to follow-up conversations instead of formatting",false,true)+
  '<details><summary>Baseline and how I\'ll measure it (optional now, finish after the session)</summary>'+
  '<div class="grid2"><div>'+field("value.effBase","Efficiency: baseline today","","Uses your hours above if left blank")+'</div><div>'+field("value.effM","Efficiency: how I\'ll measure it","","")+"</div>"+
- '<div>'+field("value.qualBase","Quality: baseline today","","e.g. Usually miss one or two action items")+'</div><div>'+field("value.qualM","Quality: how I\'ll measure it","","")+"</div>"+
- '<div>'+field("value.expBase","Experience: baseline today","","e.g. Thursday afternoons spent formatting")+'</div><div>'+field("value.expM","Experience: how I\'ll measure it","","")+"</div></div></details></div>";
+ '<div>'+field("value.qualBase","Quality: baseline today","","e.g. Usually miss one or two action items",false,true)+'</div><div>'+field("value.qualM","Quality: how I\'ll measure it","","")+"</div>"+
+ '<div>'+field("value.expBase","Experience: baseline today","","e.g. Thursday afternoons spent formatting",false,true)+'</div><div>'+field("value.expM","Experience: how I\'ll measure it","","")+"</div></div></details></div>";
  h+='<details class="card"><summary>Example only</summary><p class="muted">This illustration shows the level of detail to aim for. It is not a description of any real Marriott team.</p><p>When the weekly status update is due, I currently spend about 2.5 hours reading and summarizing six Teams threads, my inbox and two files to produce a one-page status brief. If Cowork assembles a first draft from those sources and my team lead reviews it, I expect:</p><table class="ex"><tr><th>Dimension</th><th>Example hypothesis</th></tr><tr><td>Efficiency</td><td>Under 1 hour, including review</td></tr><tr><td>Quality</td><td>Catch more open action items</td></tr><tr><td>Experience</td><td>Thursday afternoon goes to follow-up conversations instead of formatting</td></tr></table></details>';
  return h;}
 
@@ -383,15 +430,15 @@ function baselineText(){var v=S.value;var a=[];if(v.hours)a.push("about "+v.hour
 
 function vPlan(){var h=header("Part F \u00b7 Step 6","First-run plan (#1)","","","Plan the first real run of your #1. Be specific: a real deliverable, a real date and a named reviewer.");
  if(!r1())return h+needR1();
- h+='<details class="card" open><summary>Workflow definition (carried over from Part D)</summary>'+defSummary()+'<button type="button" class="btn small" data-act="go" data-step="5">Update anything that changed</button></details>';
- h+='<div class="card">'+field("plan.deliverable","Real upcoming deliverable","Describe it at the process level.","e.g. Status brief for the November 20 leadership update")+
+ h+='<details class="card" open><summary>Workflow definition (carried over from Part D)</summary>'+defSummary()+'<button type="button" class="btn small" data-act="go" data-step="5">Edit in Part D</button></details>';
+ h+='<div class="card">'+field("plan.deliverable","Real upcoming deliverable","Describe it at the process level.","e.g. Status brief for the November 20 leadership update",false,true)+
  '<div class="grid2"><div><label class="f" for="plan.due">Due date</label><input type="date" id="plan.due" data-bind="plan.due" value="'+esc(S.plan.due)+'"></div>'+
  '<div><label class="f" for="plan.run1">First-run date<span class="hint">Aim for end of day Friday, November 13.</span></label><input type="date" id="plan.run1" data-bind="plan.run1" value="'+esc(S.plan.run1)+'" min="2026-11-11"></div>'+
  '<div><label class="f" for="plan.run2">Second run date</label><input type="date" id="plan.run2" data-bind="plan.run2" value="'+esc(S.plan.run2)+'" min="2026-11-11"></div></div>'+
  '<label class="f">Baseline <span class="hint">From Part E.</span></label><div class="carry" data-live="baseline">'+(esc(baselineText())||'<span class="empty-note">Add your hours and people in Part E.</span>')+"</div>"+
- '<label class="f">Evidence I\'ll capture</label><div class="chips">'+EVIDENCE.map(function(e){return chip(e,S.plan.evidence.indexOf(e)>-1,'data-act="evid" data-val="'+esc(e)+'"');}).join("")+"</div>"+
+ '<label class="f">After each run, record these five things<span class="hint">Everyone in the pilot captures the same evidence so results can be compared. This list appears in your brief.</span></label><ul class="evid-list">'+EVIDENCE.map(function(e){return "<li>"+esc(e)+"</li>";}).join("")+"</ul>"+
  '<label class="f">#2 and #3 from my shortlist</label><div class="carry">'+["r2","r3"].map(function(r,j){var it=idea(S.ranks[r]);return "#"+(j+2)+": "+(it?esc(it.name):'<span class="empty-note">not chosen</span>');}).join("<br>")+"</div>"+
- field("plan.help","Help I need","","e.g. Tips on writing the prompt; confirm which SharePoint folder to use")+
+ field("plan.help","Help I need","","e.g. Tips on writing the prompt; confirm which SharePoint folder to use",false,true)+
  '<label class="f">Future requirement (if any)</label><div class="carry">'+(futureReqs().length?futureReqs().map(function(i){return esc(i.name)+(i.outside?" ("+esc(i.outside)+")":"");}).join("<br>"):'<span class="empty-note">None</span>')+"</div></div>";
  h+='<div class="share"><b>Your first-run commitment:</b><div class="prompt" data-live="commit" style="margin-top:8px">'+esc(commitment())+'</div><button type="button" class="btn accent" data-act="copy" data-copy="commit">Copy my commitment</button></div>';
  h+='<p class="muted">Finish anything left in Parts E and F after the session, and bring your shortlist and #1 plan to your Foundations training session.</p>';
@@ -399,7 +446,7 @@ function vPlan(){var h=header("Part F \u00b7 Step 6","First-run plan (#1)","",""
  return h;}
 
 function briefText(){var L=[];var d=S.define,v=S.value,p=S.plan;
- L.push("MY COWORK FIRST-TASK BRIEF");if(S.name||S.team)L.push([S.name,S.team].filter(Boolean).join(", "));L.push("");
+ L.push("MY COWORK FIRST-TASK BRIEF");if(whoLine())L.push(whoLine());L.push("");
  L.push("MY COWORK SHORTLIST");["r1","r2","r3"].forEach(function(r,j){var it=idea(S.ranks[r]);L.push("#"+(j+1)+": "+(it?it.name+" ("+total(it)+"/21)":"[not chosen]"));});
  var FR=futureReqs();if(FR.length)L.push("Future requirements: "+FR.map(function(i){return i.name+(i.outside?" ("+i.outside+")":"");}).join("; "));
  L.push("");L.push("#1 DEFINED");L.push("Trigger: "+(d.trigger||"[ ]"));L.push("Approved inputs: "+(d.inputs||"[ ]"));
@@ -408,12 +455,12 @@ function briefText(){var L=[];var d=S.define,v=S.value,p=S.plan;
  L.push("- Quality: "+(v.qual||"[ ]")+(v.qualBase?" (baseline: "+v.qualBase+")":"")+" | Measure: "+v.qualM);L.push("- Experience: "+(v.exp||"[ ]")+(v.expBase?" (baseline: "+v.expBase+")":"")+" | Measure: "+v.expM);
  L.push("Baseline: "+(baselineText()||"[ ]"));
  L.push("");L.push("FIRST-RUN PLAN");L.push("Deliverable: "+(p.deliverable||"[ ]")+(p.due?" (due "+fmtDate(p.due)+")":""));L.push("First run: "+(fmtDate(p.run1)||"Friday, November 13")+(p.run2?" | Second run: "+fmtDate(p.run2):""));
- L.push("Evidence: "+p.evidence.join("; "));if(p.help)L.push("Help I need: "+p.help);L.push(commitment());
+ L.push("Evidence: "+EVIDENCE.join("; "));if(p.help)L.push("Help I need: "+p.help);L.push(commitment());
  L.push("");L.push("STARTING PROMPT (draft, edit before you use it)");L.push(starterPrompt());
  return L.join("\n");}
 
 function vBrief(){var d=S.define,v=S.value,p=S.plan;
- var h='<div class="brief">'+header("Your take-away","My Cowork First-Task Brief","","",esc([S.name,S.team].filter(Boolean).join(", "))||"Everything you built in the workshop, in one place.");
+ var h='<div class="brief">'+header("Your take-away","My Cowork First-Task Brief","","",esc(whoLine())||"Everything you built in the workshop, in one place.");
  h+='<div class="toolbar"><button type="button" class="btn primary" data-act="copy" data-copy="brief">Copy summary</button><button type="button" class="btn" data-act="copy" data-copy="starter">Copy starting prompt</button><button type="button" class="btn" data-act="print">Print or save as PDF</button><button type="button" class="btn" data-act="download">Download as text</button></div>';
  if(!r1())h+=needR1();
  h+='<div class="card"><h2>My Cowork shortlist</h2>';
@@ -422,7 +469,7 @@ function vBrief(){var d=S.define,v=S.value,p=S.plan;
  h+='</div><div class="card"><h2>My #1, defined</h2><div class="kv"><div>Workflow</div><div><b>'+esc(r1name())+"</b></div><div>Trigger</div><div>"+esc(d.trigger)+"</div><div>Approved inputs</div><div>"+esc(d.inputs)+"</div><div>Major steps</div><div>"+(lines(d.steps).length?"<ol style=\"margin:0;padding-inline-start:18px\">"+lines(d.steps).map(function(s){return "<li>"+esc(s)+"</li>";}).join("")+"</ol>":"")+"</div><div>Finished output</div><div>"+esc(d.output)+"</div><div>Human reviewer</div><div>"+esc(d.reviewer)+"</div><div>Stopping point</div><div>"+esc(stopText())+"</div></div></div>";
  h+='<div class="card"><h2>Value hypothesis and baseline</h2><p>'+esc(valueSentenceText())+'</p><table class="ex"><tr><th>Dimension</th><th>My hypothesis</th><th>Baseline today</th><th>How I\'ll measure it</th></tr>'+
  "<tr><td>Efficiency</td><td>"+esc(v.eff)+"</td><td>"+esc(v.effBase||(v.hours?"About "+v.hours+" hours":""))+"</td><td>"+esc(v.effM)+"</td></tr><tr><td>Quality</td><td>"+esc(v.qual)+"</td><td>"+esc(v.qualBase)+"</td><td>"+esc(v.qualM)+"</td></tr><tr><td>Experience</td><td>"+esc(v.exp)+"</td><td>"+esc(v.expBase)+"</td><td>"+esc(v.expM)+"</td></tr><tr><td>People involved</td><td></td><td>"+esc(v.people)+"</td><td></td></tr></table></div>";
- h+='<div class="card"><h2>First-run plan</h2><div class="kv"><div>Real deliverable</div><div>'+esc(p.deliverable)+(p.due?" (due "+esc(fmtDate(p.due))+")":"")+"</div><div>First run</div><div>"+esc(fmtDate(p.run1)||"Friday, November 13")+"</div><div>Second run</div><div>"+esc(fmtDate(p.run2))+"</div><div>Baseline</div><div>"+esc(baselineText())+"</div><div>Evidence I'll capture</div><div>"+esc(p.evidence.join("; "))+"</div><div>Help I need</div><div>"+esc(p.help)+'</div></div><p style="margin-top:10px"><b>'+esc(commitment())+"</b></p></div>";
+ h+='<div class="card"><h2>First-run plan</h2><div class="kv"><div>Real deliverable</div><div>'+esc(p.deliverable)+(p.due?" (due "+esc(fmtDate(p.due))+")":"")+"</div><div>First run</div><div>"+esc(fmtDate(p.run1)||"Friday, November 13")+"</div><div>Second run</div><div>"+esc(fmtDate(p.run2))+"</div><div>Baseline</div><div>"+esc(baselineText())+"</div><div>Evidence I'll capture</div><div>"+esc(EVIDENCE.join("; "))+"</div><div>Help I need</div><div>"+esc(p.help)+'</div></div><p style="margin-top:10px"><b>'+esc(commitment())+"</b></p></div>";
  h+='<div class="card"><h2>Starting prompt for your first Cowork run</h2><p class="muted" style="font-size:14px">A starting draft built only from your Part D answers. Read it, fill any [brackets] and adjust the wording before you use it in Cowork.</p><div class="prompt">'+esc(starterPrompt())+'</div><button type="button" class="btn small noprint" data-act="copy" data-copy="starter">Copy starting prompt</button></div>';
  h+='<div class="card"><h2>What happens next</h2><table class="ex">'+"<tr><th>Date</th><th>What</th><th>Time (ET)</th></tr>"+TIMELINE.map(function(t){return "<tr><td>"+esc(t[0])+"</td><td>"+esc(t[1])+"</td><td>"+esc(t[2])+"</td></tr>";}).join("")+'</table><p class="muted" style="font-size:14px">Your pilot credits last about 30 days.</p><p class="muted" style="font-size:14px">Your first win is a starting point. During the pilot, repeat Steps 4 to 6 for your #2 and #3, and run any new idea through Steps 2 and 3 to see where it lands on your shortlist.</p></div>';
  h+='<div class="callout warn noprint">Using a shared computer? When you have copied or saved your brief, <button type="button" class="btn link" data-act="reset">clear my answers from this browser</button>.</div></div>';
@@ -431,35 +478,37 @@ function vBrief(){var d=S.define,v=S.value,p=S.plan;
 var VIEWS=[vStart,vFind,vFit,vScore,vRank,vDefine,vValue,vPlan,vBrief];
 
 /* ---------- Render ---------- */
-function stepDone(i){switch(i){case 0:return !!S.visited[1];case 1:return S.ideas.length>0;case 2:return S.ideas.length>0&&S.ideas.every(function(it){return fitResult(it)!=="pending";});
+function stepDone(i){switch(i){case 0:return profileOK()&&!!S.visited[1];case 1:return S.ideas.length>0;case 2:return S.ideas.length>0&&S.ideas.every(function(it){return fitResult(it)!=="pending";});
  case 3:return passed().length>0&&passed().every(complete);case 4:return !!S.ranks.r1;case 5:return !!(S.define.trigger&&S.define.output&&S.define.reviewer);case 6:return !!(S.value.hours&&S.value.eff);case 7:return !!(S.plan.run1&&S.plan.deliverable);default:return false;}}
 function render(keepScroll){var y=window.scrollY;
  if(S.step===3)prefillScores();
  document.getElementById("steps").innerHTML=STEPS.map(function(s,i){return '<button type="button" data-act="go" data-step="'+i+'" class="'+(i===S.step?"cur":"")+(stepDone(i)&&i!==S.step?" done":"")+'"'+(i===S.step?' aria-current="step"':"")+">"+esc(s.label)+"</button>";}).join("");
  document.getElementById("view").innerHTML=VIEWS[S.step]();
  document.getElementById("back").disabled=S.step===0;
- var nx=document.getElementById("next");nx.textContent=S.step===STEPS.length-1?"Back to start":(S.step===0?"Let's start \u2192":"Continue \u2192");
+ var nx=document.getElementById("next");var blk=(S.step===3&&scoringBlocked());nx.disabled=blk;nx.title=blk?"Score every idea first":"";var nh=document.getElementById("navHint");if(nh)nh.textContent=blk?"Score all "+passed().length+" ideas to continue ("+unscored().length+" left)":"";nx.textContent=S.step===STEPS.length-1?"Back to start":(S.step===0?"Let's start \u2192":"Continue \u2192");
  document.getElementById("pos").textContent="Step "+(S.step+1)+" of "+STEPS.length;
  save();
  if(keepScroll)window.scrollTo(0,y);else window.scrollTo(0,0);
  var cur=document.querySelector('.steps .cur');if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"nearest",inline:"center"});}
-function go(i){S.step=Math.max(0,Math.min(STEPS.length-1,i));S.visited[S.step]=true;render(false);}
+function go(i){i=Math.max(0,Math.min(STEPS.length-1,i));if(i>0&&!profileOK()){S.ui.showErr=true;S.step=0;S.visited[0]=true;render(false);var bad=PROFILE.filter(function(f){return profileErr(f[0]);})[0];var el=bad&&document.getElementById("p-"+bad[0]);if(el&&el.focus)el.focus();return;}
+ if(i>3&&scoringBlocked()){S.ui.scoreId=unscored()[0].id;i=3;}
+ S.step=i;S.visited[S.step]=true;render(false);}
 function updateLive(){document.querySelectorAll("[data-live]").forEach(function(el){var k=el.getAttribute("data-live");
  if(k==="sentence")el.innerHTML=valueSentenceHTML();else if(k==="commit")el.textContent=commitment();else if(k==="baseline")el.innerHTML=esc(baselineText())||'<span class="empty-note">Add your hours and people in Part E.</span>';});}
 
 function flash(btn,msg){if(!btn)return;var t=btn.textContent;btn.textContent=msg||"Copied \u2713";btn.classList.add("copied");setTimeout(function(){btn.textContent=t;btn.classList.remove("copied");},1600);}
 function copyText(text,btn){function fallback(){var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy");}catch(e){}document.body.removeChild(ta);flash(btn,ok?"Copied \u2713":"Select and copy manually");}
  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(function(){flash(btn);},fallback);}else fallback();}
-function addIdeas(arr){arr.forEach(function(n){n=n.replace(/^\s*([-*\u2022]|\d+[.)])\s*/,"").trim();if(n)S.ideas.push(newIdea(n));});}
+function addIdeas(arr){arr.forEach(function(n){n=n.replace(/^\s*([-*\u2022\u25cf\u25aa\u2013]|\d+[.)])\s*/,"").replace(/\*\*|__/g,"").trim();if(n)S.ideas.push(newIdea(n));});}
 
+var pendingFocus=null;
 function onClick(e){var b=e.target.closest("[data-act]");if(!b||b.disabled)return;var a=b.getAttribute("data-act");var id=b.getAttribute("data-id");var val=b.getAttribute("data-val");var it=id?idea(id):null;
  switch(a){
  case "go":go(+b.getAttribute("data-step"));return;
  case "setv":set(b.getAttribute("data-path"),get(b.getAttribute("data-path"))===val?"":val);break;
- case "addIdea":var inp=document.getElementById("newIdea");if(inp&&inp.value.trim()){addIdeas([inp.value]);render(true);var n2=document.getElementById("newIdea");if(n2)n2.focus();}return;
- case "addBulk":var ta=document.getElementById("bulkIdeas");if(ta&&ta.value.trim())addIdeas(ta.value.split(/\n/));break;
+  case "addBulk":var ta=document.getElementById("bulkIdeas");if(ta&&ta.value.trim())addIdeas(ta.value.split(/\n/));break;
  case "rmIdea":S.ideas=S.ideas.filter(function(x){return x.id!==id;});cleanRanks();break;
- case "ideaSet":if(it){it[b.getAttribute("data-key")]=(it[b.getAttribute("data-key")]===val?"":val);var k=b.getAttribute("data-key")==="freq"?"freq":"effort";if(it.touched[k]==="a"){delete it.scores[k];delete it.touched[k];}}break;
+ case "ideaSet":if(it){it[b.getAttribute("data-key")]=(it[b.getAttribute("data-key")]===val?"":val);var k=b.getAttribute("data-key")==="freq"?"freq":"effort";if(it.touched[k]==="a"){delete it.scores[k];delete it.touched[k];}var dk=b.getAttribute("data-key");if(it[dk]==="Other")pendingFocus='[data-idea="'+id+'"][data-key="'+dk+'Other"]';}break;
  case "copyIdea":if(it)copyText(it.name,b);return;
  case "fit":if(it){var fk=b.getAttribute("data-key");it.fit[fk]=(it.fit[fk]===val?"":val);if(fk==="inputs"){if(it.fit.inputs!=="Partly")it.fit.part="";if(it.touched.feas==="b"){delete it.scores.feas;delete it.touched.feas;}}cleanRanks();}break;
  case "scoreTab":S.ui.scoreId=id;render(false);return;
@@ -468,8 +517,8 @@ function onClick(e){var b=e.target.closest("[data-act]");if(!b||b.disabled)retur
  case "suggest":var R=rankable().filter(complete).sort(function(a2,b2){return total(b2)-total(a2);});var first=null;for(var i=0;i<R.length;i++){if(R[i].scores.feas===3){first=R[i];break;}}
   var rest=R.filter(function(x){return x!==first;});S.ranks={r1:first?first.id:"",r2:rest[0]?rest[0].id:"",r3:rest[1]?rest[1].id:""};break;
  case "stop":var ix=S.define.stops.indexOf(val);if(ix>-1)S.define.stops.splice(ix,1);else S.define.stops.push(val);S.define.stops.sort(function(a3,b3){return STOPS.indexOf(a3)-STOPS.indexOf(b3);});break;
- case "evid":var ex=S.plan.evidence.indexOf(val);if(ex>-1)S.plan.evidence.splice(ex,1);else S.plan.evidence.push(val);S.plan.evidence.sort(function(a4,b4){return EVIDENCE.indexOf(a4)-EVIDENCE.indexOf(b4);});break;
- case "copy":var c=b.getAttribute("data-copy");copyText(c==="p1"?PROMPT1:c==="p2"?PROMPT2:c==="p3"?PROMPT3:c==="commit"?commitment():c==="starter"?starterPrompt():briefText(),b);return;
+
+ case "copy":var c=b.getAttribute("data-copy");copyText(c==="p1"?PROMPT1:c==="p2"?PROMPT2:c==="commit"?commitment():c==="starter"?starterPrompt():briefText(),b);return;
  case "print":window.print();return;
  case "download":var blob=new Blob([briefText()],{type:"text/plain"});var url=URL.createObjectURL(blob);var aEl=document.createElement("a");aEl.href=url;aEl.download="My-Cowork-First-Task-Brief.txt";document.body.appendChild(aEl);aEl.click();setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(aEl);},500);return;
  case "reset":if(window.confirm("Clear all your answers from this browser? This can't be undone. Copy or save your brief first if you need it.")){try{localStorage.removeItem(KEY);}catch(e2){}S=blank();go(0);}return;
@@ -477,13 +526,12 @@ function onClick(e){var b=e.target.closest("[data-act]");if(!b||b.disabled)retur
  case "back":go(S.step-1);return;
  case "next":go(S.step===STEPS.length-1?0:S.step+1);return;
  }
- render(true);}
+ render(true);if(pendingFocus){var pf=document.querySelector(pendingFocus);pendingFocus=null;if(pf)pf.focus();}}
 function onInput(e){var t=e.target;var p=t.getAttribute("data-bind");
- if(p){set(p,t.value);save();updateLive();return;}
+ if(p){set(p,t.value);save();updateLive();updateErrs();return;}
  var id=t.getAttribute("data-idea");if(id){var it=idea(id);if(it){it[t.getAttribute("data-key")]=t.value;save();}}}
-function onKey(e){if(e.key==="Enter"&&e.target&&e.target.id==="newIdea"){e.preventDefault();var b=document.querySelector('[data-act="addIdea"]');if(b)b.click();}}
 
-function demo(){var s=blank();s.session="Nov 9";s.visited={0:true,1:true};
+function demo(){var s=blank();s.name="Alex";s.last="Example";s.email="alex.example@example.com";s.team="Example department";s.visited={0:true,1:true};
  var a=newIdea("Compile the weekly team status brief and action tracker");a.freq="Weekly or more";a.time="1 to 3 hours";a.fit={inputs:"Yes",part:"",inst:"Yes"};a.scores={freq:3,effort:2,complexity:3,impact:2,feas:3,meas:3,reach:2};
  var b=newIdea("Prepare the monthly leadership review prep pack (briefing and agenda)");b.freq="Monthly";b.time="1 to 3 hours";b.fit={inputs:"Yes",part:"",inst:"Yes"};b.scores={freq:2,effort:2,complexity:3,impact:3,feas:3,meas:2,reach:2};
  var c=newIdea("Build the event or project recap and follow-up pack");c.freq="Monthly";c.time="1 to 3 hours";c.fit={inputs:"Yes",part:"",inst:"Yes"};c.scores={freq:2,effort:2,complexity:2,impact:2,feas:3,meas:2,reach:1};
@@ -496,7 +544,6 @@ function demo(){var s=blank();s.session="Nov 9";s.visited={0:true,1:true};
 
 document.addEventListener("click",onClick);
 document.addEventListener("input",onInput);
-document.addEventListener("keydown",onKey);
 S.visited=S.visited||{0:true};
 render(false);
 })();
