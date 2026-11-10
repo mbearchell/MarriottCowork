@@ -241,11 +241,17 @@ function complete(it){return scoreCount(it)===CRIT.length;}
 function unscored(){return passed().filter(function(it){return !complete(it);});}
 function scoringBlocked(){return passed().length>0&&unscored().length>0;}
 function keyText(t){if(t>=17)return "Strong first test";if(t>=12)return "Good test or a solid #2 or #3";return "Probably better in Copilot Chat, or save for later";}
+function noneHelp(inC){return '<div class="callout warn"><b>None of your ideas passed yet? Try these, in order:</b><ol style="margin:6px 0 6px 20px;padding:0">'+
+ '<li>Revisit any <b>No</b> on inputs. Could it be <b>Partly</b>? Test the Microsoft 365 part and add the rest by hand.</li>'+
+ '<li>Revisit any <b>No</b> on a real instance. Is there a smaller or more frequent version of the same work?</li>'+
+ '<li>Add one or two new ideas in <button type="button" class="btn link" data-act="go" data-step="1">Part A</button>. The questions under \u201cNo useful results?\u201d can help.</li>'+
+ '<li>Still nothing? Pick the idea closest to Microsoft 365 and test just that piece. Log the rest as a future requirement.</li></ol>'+
+ (inC?'<button type="button" class="btn" data-act="go" data-step="2">Back to Part B</button> ':'')+'Stuck? Post \u201cnone passed\u201d in the chat and we\u2019ll help you find one.</div>';}
 function rankable(){return passed().filter(function(it){return it.scores.feas!==1;});}
 function futureReqs(){return S.ideas.filter(function(it){return fitResult(it)==="fr"||(fitResult(it)==="pass"&&it.scores.feas===1);});}
 function rankOf(id){if(!id)return "";if(S.ranks.r1===id)return "#1";if(S.ranks.r2===id)return "#2";if(S.ranks.r3===id)return "#3";return "";}
 function cleanRanks(){["r1","r2","r3"].forEach(function(r){var it=idea(S.ranks[r]);if(!it||fitResult(it)!=="pass"||it.scores.feas===1)S.ranks[r]="";});
- var one=idea(S.ranks.r1);if(one&&one.scores.feas&&one.scores.feas!==3)S.ranks.r1="";}
+ }
 function r1(){return idea(S.ranks.r1);}
 function r1name(){var it=r1();return it?it.name:"";}
 function prefillScores(){passed().forEach(function(it){
@@ -306,7 +312,7 @@ function updateErrs(){if(S.step!==0||!S.ui.showErr)return;PROFILE.forEach(functi
 
 /* ---------- Screens ---------- */
 function vStart(){return header("Find Your First Cowork Win","Your workshop companion","","",
- "This companion walks you through Parts A to F of the workshop, one step at a time. You find the work, check what you can test, rank a shortlist of at least three workflows, and plan the first run of your #1. Anything you enter carries forward, so you never type it twice.")+
+ "This companion walks you through Parts A to F of the workshop, one step at a time. You find the work, check what you can test, rank a shortlist of at least three workflows, and plan the first run of your #1. Anything you enter carries forward, so you never type it twice. It\u2019s built just for this 30-day pilot, to help you choose what to test first. You won\u2019t need it after the pilot.")+
  '<div class="callout warn"><b>Before you start:</b> Don\'t enter confidential Marriott information, guest information, legal or financial details, credentials, or the contents of sensitive emails, chats, meetings or files. Describe your workflows at the process level, for example "Compile the weekly team status brief."<br><span class="muted">Your answers stay in this browser on this device. Nothing is sent to Microsoft, Marriott or anyone else.</span></div>'+
  '<div class="card"><h3>Two ground rules for the pilot</h3><p style="margin:0">First, use Microsoft 365 information only: Outlook, Teams, meetings, OneDrive and SharePoint. No external connectors, plugins or outside systems. Second, you stay accountable for the result. Cowork drafts; you review, decide, send and share.</p></div>'+
  '<div class="card"><h3>About you</h3><p class="muted" style="margin:0;font-size:14px">All fields are required.</p><div class="grid2"><div>'+pField(PROFILE[0])+'</div><div>'+pField(PROFILE[1])+'</div><div>'+pField(PROFILE[2])+'</div><div>'+pField(PROFILE[3])+'</div></div>'+
@@ -332,6 +338,7 @@ function vFind(){var h=header("Part A \u00b7 Step 1","Find the work","","About 1
 
 function vFit(){var h=header("Part B \u00b7 Step 2","Quick fit check","So you spend your 30 days on work you can actually test.","About 4 minutes","Check every idea from Part A. This is a quick filter, not a final answer.");
  if(!S.ideas.length)return h+'<div class="callout warn">Add your workflow ideas in <button type="button" class="btn link" data-act="go" data-step="1">Part A</button> first.</div>';
+ if(S.ideas.every(function(x){return fitResult(x)!=="pending";})&&!passed().length)h+=noneHelp(false);
  S.ideas.forEach(function(it,i){var r=fitResult(it);var f=it.fit;
   h+='<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">'+(i+1)+". "+esc(it.name||"(unnamed idea)")+'</h3><span class="result '+r+'">'+(r==="pass"?"Pass":r==="fr"?"Future requirement":"Not finished")+"</span></div>"+
   '<div class="q"><div class="ql">Inputs already in Microsoft 365 (Outlook, Teams, meetings, OneDrive, SharePoint)?</div><div class="chips">'+
@@ -349,7 +356,7 @@ function vFit(){var h=header("Part B \u00b7 Step 2","Quick fit check","So you sp
 
 function vScore(){var h=header("Part C \u00b7 Step 3","Score it","So you start with the workflow that pays off most.","About 6 minutes","Score only the ideas that passed Part B. Gut feel is fine. Give each idea 1 to 3 on the seven criteria, for a maximum total of 21. Feasibility in the pilot is a gate: a workflow that needs systems outside Microsoft 365 cannot be your #1.");
  var P=passed();
- if(!P.length)return h+'<div class="callout warn">None of your ideas has passed the quick fit check yet. Finish <button type="button" class="btn link" data-act="go" data-step="2">Part B</button> first.</div>';
+ if(!P.length)return h+(S.ideas.length&&S.ideas.every(function(x){return fitResult(x)!=="pending";})?noneHelp(true):'<div class="callout warn">None of your ideas has passed the quick fit check yet. Finish <button type="button" class="btn link" data-act="go" data-step="2">Part B</button> first.</div>');
  if(!idea(S.ui.scoreId)||fitResult(idea(S.ui.scoreId))!=="pass")S.ui.scoreId=P[0].id;
  var U=unscored(),nDone=P.length-U.length;
  h+=U.length?'<div class="score-progress" role="status"><span class="big">'+nDone+" of "+P.length+' ideas scored</span><span>Score <b>every</b> idea below before you continue. When you finish one, use the blue <b>Next idea</b> button under the scores, or tap an idea\'s tab.</span></div>'
@@ -371,15 +378,15 @@ function vScore(){var h=header("Part C \u00b7 Step 3","Score it","So you start w
  '<tr><td>Weekly team status brief</td><td>3</td><td>2</td><td>3</td><td>2</td><td>3</td><td>3</td><td>2</td><td>18</td><td>#1</td></tr><tr><td>Monthly leadership review prep pack</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td><td>2</td><td>2</td><td>17</td><td>#2</td></tr><tr><td>Event or project recap pack</td><td>2</td><td>2</td><td>2</td><td>2</td><td>3</td><td>2</td><td>1</td><td>14</td><td>#3</td></tr></table><p class="muted">The status brief scores 3 on Complexity, but it is weekly and familiar, so it stays #1.</p></details>';
  return h;}
 
-function vRank(){var h=header("Part C \u00b7 Step 3","Rank your shortlist","","","How to choose: Rank your top three as #1, #2 and #3. #1 must have Feasibility 3. If two tie, pick the one with a real instance coming up soonest.");
+function vRank(){var h=header("Part C \u00b7 Step 3","Rank your shortlist","","","How to choose: Rank your top three as #1, #2 and #3. Your #1 needs Feasibility 2 or 3; choose a 3 if you have one. If two tie, pick the one with a real instance coming up soonest.");
  cleanRanks();
  var R=rankable().filter(complete).sort(function(a,b){return total(b)-total(a);});
  var unscored=rankable().filter(function(it){return !complete(it);});
  h+='<div class="grid2"><div class="card"><h3>Your scored ideas</h3>';
  if(!R.length)h+='<p class="empty-note">Score your ideas in <button type="button" class="btn link" data-act="go" data-step="3">Part C</button> first.</p>';
  R.forEach(function(it){var rk=rankOf(it.id);
-  h+='<div class="sl-item"><div><b>'+esc(it.name)+'</b><div class="muted" style="font-size:13.5px">'+total(it)+" / 21 \u00b7 "+esc(keyText(total(it)))+(it.scores.feas!==3?" \u00b7 Feasibility "+it.scores.feas+" (can't be #1)":"")+'</div></div><div class="rankbtns">'+
-  ["r1","r2","r3"].map(function(r,j){var dis=(r==="r1"&&it.scores.feas!==3);return '<button type="button" class="chip" aria-pressed="'+(S.ranks[r]===it.id)+'" data-act="rank" data-id="'+it.id+'" data-r="'+r+'"'+(dis?' disabled title="#1 must have Feasibility 3" style="opacity:.4;cursor:not-allowed"':"")+">#"+(j+1)+"</button>";}).join("")+"</div></div>";});
+  h+='<div class="sl-item"><div><b>'+esc(it.name)+'</b><div class="muted" style="font-size:13.5px">'+total(it)+" / 21 \u00b7 "+esc(keyText(total(it)))+(it.scores.feas===2?" \u00b7 Feasibility 2: add the outside piece by hand":"")+'</div></div><div class="rankbtns">'+
+  ["r1","r2","r3"].map(function(r,j){var dis=false;return '<button type="button" class="chip" aria-pressed="'+(S.ranks[r]===it.id)+'" data-act="rank" data-id="'+it.id+'" data-r="'+r+'"'+(dis?' disabled title="#1 must have Feasibility 3" style="opacity:.4;cursor:not-allowed"':"")+">#"+(j+1)+"</button>";}).join("")+"</div></div>";});
  if(unscored.length)h+='<p class="muted" style="font-size:13.5px">Still to score: '+unscored.map(function(i){return esc(i.name);}).join(", ")+'. <button type="button" class="btn link" data-act="go" data-step="3">Finish scoring</button></p>';
  if(R.length)h+='<div style="margin-top:8px"><button type="button" class="btn" data-act="suggest">Rank them for me by score</button></div>';
  h+='</div><div class="card"><h3>My Cowork shortlist</h3>';
@@ -388,6 +395,7 @@ function vRank(){var h=header("Part C \u00b7 Step 3","Rank your shortlist","",""
  var FR=futureReqs();
  h+='<div style="margin-top:10px"><b>Future requirements</b> <span class="muted">(ideas that need outside data)</span>'+(FR.length?"<ul>"+FR.map(function(i){return "<li>"+esc(i.name)+(i.outside?" <span class=\"muted\">("+esc(i.outside)+")</span>":"")+"</li>";}).join("")+"</ul>":'<p class="empty-note" style="margin:4px 0">None so far.</p>')+"</div></div></div>";
  var one=r1();
+ if(one&&one.scores.feas===2)h+='<div class="callout"><b>Your #1 is mostly in Microsoft 365.</b> Plan the run on the Microsoft 365 part and add the outside piece by hand. The outside piece goes on your future-requirements list.</div>';
  if(one&&one.scores.complexity===3)h+='<div class="callout warn"><b>First-test check:</b> If your top workflow scored 3 on Complexity and this is your first time using Cowork, consider making a simpler workflow your #1 and moving the complex one to #2.</div>';
  var n=rankable().length;
  if(n<3)h+='<div class="callout">You have '+n+" idea"+(n===1?"":"s")+' that passed. Aim for a shortlist of at least three: <button type="button" class="btn link" data-act="go" data-step="1">add more ideas in Part A</button>.</div>';
@@ -514,7 +522,7 @@ function onClick(e){var b=e.target.closest("[data-act]");if(!b||b.disabled)retur
  case "scoreTab":S.ui.scoreId=id;render(false);return;
  case "score":if(it){var sk=b.getAttribute("data-key");var nv=+val;it.scores[sk]=(it.scores[sk]===nv?undefined:nv);if(it.scores[sk]===undefined)delete it.scores[sk];delete it.touched[sk];cleanRanks();}break;
  case "rank":var r=b.getAttribute("data-r");if(S.ranks[r]===id){S.ranks[r]="";}else{["r1","r2","r3"].forEach(function(x){if(S.ranks[x]===id)S.ranks[x]="";});S.ranks[r]=id;}break;
- case "suggest":var R=rankable().filter(complete).sort(function(a2,b2){return total(b2)-total(a2);});var first=null;for(var i=0;i<R.length;i++){if(R[i].scores.feas===3){first=R[i];break;}}
+ case "suggest":var R=rankable().filter(complete).sort(function(a2,b2){return total(b2)-total(a2);});var first=null;for(var i=0;i<R.length;i++){if(R[i].scores.feas===3){first=R[i];break;}}if(!first&&R.length)first=R[0];
   var rest=R.filter(function(x){return x!==first;});S.ranks={r1:first?first.id:"",r2:rest[0]?rest[0].id:"",r3:rest[1]?rest[1].id:""};break;
  case "stop":var ix=S.define.stops.indexOf(val);if(ix>-1)S.define.stops.splice(ix,1);else S.define.stops.push(val);S.define.stops.sort(function(a3,b3){return STOPS.indexOf(a3)-STOPS.indexOf(b3);});break;
 
